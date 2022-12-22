@@ -1,3 +1,6 @@
+import org.openrndr.KEY_BACKSPACE
+import org.openrndr.KEY_ENTER
+import org.openrndr.KEY_ESCAPE
 import org.openrndr.application
 import org.openrndr.color.ColorRGBa
 import org.openrndr.panel.controlManager
@@ -236,7 +239,7 @@ fun main() = application {
 
         keyboard.keyDown.listen {
             // A motion to adjourn is always in order.
-            if (it.name == "escape") {
+            if (it.key == KEY_ESCAPE) {
                 // This *should* exit the program gracefully but doesn't always work.
                 program.application.exit()
                 // This will definitely end the program.
@@ -247,12 +250,13 @@ fun main() = application {
                 // Start new game on keypress.
                 GUI.startNewGame()
             } else {
-                when (it.name) {
-                    "enter" -> GUI.processText(ENTER_LABEL)
-                    "backspace" -> GUI.processText(BACKSPACE_LABEL)
-                    else -> if (it.name.length == 1) GUI.processText(it.name[0].uppercase()) else System.err.println(
-                        "Can't handle ${it.name}"
-                    )
+                when (it.key) {
+                    KEY_ENTER -> GUI.processText(ENTER_LABEL)
+                    KEY_BACKSPACE -> GUI.processText(BACKSPACE_LABEL)
+                    else -> if (it.name.length == 1)
+                        GUI.processText(it.name[0].uppercase())
+                    else
+                        System.err.println("Can't handle ${it.name}")
                 }
             }
         }
