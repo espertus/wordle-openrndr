@@ -27,21 +27,23 @@ private fun Char.toKeyState() =
         else -> throw AssertionError("Unreachable code reached with: $this")
     }
 
-private val lightGray = Color.RGBa(ColorRGBa(.827, .839, .855))
-private val darkGray = Color.RGBa(ColorRGBa(.471, .486, .494))
-private val yellow = Color.RGBa(ColorRGBa(.788, .706, .345))
-private val green = Color.RGBa(ColorRGBa(.416, .667, .392))
-private val red = Color.RGBa(ColorRGBa.RED)
-private val white = Color.RGBa(ColorRGBa.WHITE)
-private val black = Color.RGBa(ColorRGBa.BLACK)
+private object Palette {
+    val lightGray = Color.RGBa(ColorRGBa(.827, .839, .855))
+    val darkGray = Color.RGBa(ColorRGBa(.471, .486, .494))
+    val yellow = Color.RGBa(ColorRGBa(.788, .706, .345))
+    val green = Color.RGBa(ColorRGBa(.416, .667, .392))
+    val red = Color.RGBa(ColorRGBa.RED)
+    val white = Color.RGBa(ColorRGBa.WHITE)
+    val black = Color.RGBa(ColorRGBa.BLACK)
+}
 
 enum class KeyState(val color: Color.RGBa) {
-    Special(lightGray),
-    Unknown(lightGray),
-    Unused(darkGray),
-    Mispositioned(yellow),
-    Right(green),
-    Invisible(white)
+    Special(Palette.lightGray),
+    Unknown(Palette.lightGray),
+    Unused(Palette.darkGray),
+    Mispositioned(Palette.yellow),
+    Right(Palette.green),
+    Invisible(Palette.white)
 }
 
 object GUI {
@@ -74,7 +76,7 @@ object GUI {
         keyboardButtonMap.values.forEach { button ->
             if (button.label.isNotEmpty()) {
                 button.style?.apply {
-                    color = black
+                    color = Palette.black
                     background = KeyState.Unknown.color
                 }
             }
@@ -86,8 +88,8 @@ object GUI {
             row.forEach { button: Button ->
                 button.apply {
                     label = ""
-                    style?.color = black
-                    style?.background = white
+                    style?.color = Palette.black
+                    style?.background = Palette.white
                 }.requestRedraw()
             }
         }
@@ -101,7 +103,7 @@ object GUI {
         reinitializeProperties()
         resetKeyboard()
         clearGrid()
-        display("", black, 0) // clear announcement area
+        display("", Palette.black, 0) // clear announcement area
         game = WordleGame.makeGame()
     }
 
@@ -166,7 +168,7 @@ object GUI {
             button.label = guess[i].toString() // in case we used AI
             button.style?.apply {
                 background = keyState.color
-                color = white
+                color = Palette.white
             }
             button.requestRedraw()
 
@@ -182,15 +184,15 @@ object GUI {
     }
 
     private fun showError(msg: String) {
-        display(msg, red, MESSAGE_TIMEOUT)
+        display(msg, Palette.red, MESSAGE_TIMEOUT)
     }
 
     private fun showLoss(secretWord: String) {
-        display(secretWord, black)
+        display(secretWord, Palette.black)
     }
 
     private fun showWin(numGuesses: Int) {
-        display(WordleGame.getWinningResponse(numGuesses), black)
+        display(WordleGame.getWinningResponse(numGuesses), Palette.black)
     }
 
     private fun update(s: String, newState: KeyState) {
@@ -211,7 +213,7 @@ object GUI {
             }
             button.style?.apply {
                 background = keyStates.getValue(s).color
-                color = white
+                color = Palette.white
             }
             button.requestRedraw()
         }
@@ -291,15 +293,15 @@ fun main() = application {
                 flexDirection = FlexDirection.Row
                 width = 100.percent
 
-                background = white
-                color = white
+                background = Palette.white
+                color = Palette.white
             }
 
             styleSheet((has type "button").and(has class_ "grid")) {
                 fontSize = 30.px
-                color = black
-                background = white
-                borderColor = darkGray
+                color = Palette.black
+                background = Palette.white
+                borderColor = Palette.darkGray
                 borderWidth = .5.px
                 width = 40.px
                 height = 50.px
@@ -309,13 +311,13 @@ fun main() = application {
                 marginTop = 10.px
                 marginLeft = 7.px
                 marginBottom = 0.px //10.px
-                color = black
+                color = Palette.black
             }
 
             styleSheet((has type "button").and(has class_ "spacer")) {
-                color = white
-                background = white
-                borderColor = white
+                color = Palette.white
+                background = Palette.white
+                borderColor = Palette.white
             }
 
             layout {
@@ -327,7 +329,7 @@ fun main() = application {
                     button {
                         style = styleSheet {
                             fontSize = 20.px
-                            background = white
+                            background = Palette.white
                             width = 100.percent
                             height = 30.px
                         }
@@ -400,7 +402,7 @@ fun main() = application {
         extend(cm)
         extend {
             // Set background color
-            drawer.clear(1.0, 1.0, 1.0, 1.0)
+            drawer.clear(ColorRGBa.WHITE)
         }
     }
 
