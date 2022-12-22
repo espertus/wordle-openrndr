@@ -79,13 +79,17 @@ class GUI {
     }
 
     fun readGuess(): String {
-        while (!wordEntered) {
-            yield() // consider using wait/notify pattern
-        }
-        return input.toString().let {
-            input.clear()
+        while (true) {
+            while (!wordEntered) {
+                yield() // consider using wait/notify pattern
+            }
+            val word = input.toString()
             wordEntered = false
-            it
+            if (WordleGame.isLegalWord(word)) {
+                input.clear()
+                return word
+            }
+            showError("Not in word list")
         }
     }
 
@@ -116,7 +120,7 @@ class GUI {
     }
 
     fun showWin(numGuesses: Int) {
-        display(WordleGame.getWinningResponse(numGuesses - 1), black)
+        display(WordleGame.getWinningResponse(numGuesses), black)
         gameOver = true
     }
 
@@ -352,8 +356,8 @@ fun main(args: Array<String>) = application {
             // Set background color
             drawer.clear(1.0, 1.0, 1.0, 1.0)
         }
-
     }
+
     run {
         try {
             thread(start = true) {
@@ -363,6 +367,6 @@ fun main(args: Array<String>) = application {
         } catch (e: IllegalArgumentException) {
             System.err.println(e.message ?: e.toString())
             exitProcess(1)
-        } 
+        }
     }
 }

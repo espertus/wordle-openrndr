@@ -1,4 +1,6 @@
 import java.io.File
+import java.lang.Integer.max
+import java.lang.Math.min
 
 const val WORD_LENGTH = 5
 const val MAX_TURNS = 6
@@ -63,33 +65,30 @@ class WordleGame(private val secretWord: String) {
             "Phew"
         )
 
+        // Actual Wordle solutions [secret-words.txt] from
+        // https://medium.com/@owenyin/here-lies-wordle-2021-2027-full-answer-list-52017ee99e86
+        private val secretWords = readWordsFromFile("secret-words.txt")
+        private val legalWords = readWordsFromFile("legal-words.txt")
+
+        fun isLegalWord(word: String) = legalWords.contains(word)
+
         fun getWinningResponse(numGuesses: Int) =
-            if (numGuesses in 1..MAX_TURNS)
-                WINNING_RESPONSES[numGuesses - 1]
-            else
-                WINNING_RESPONSES[MAX_TURNS - 1]
+            WINNING_RESPONSES[min(MAX_TURNS, numGuesses) - 1]
 
         private fun readWordsFromFile(filename: String): List<String> =
             File("data/dictionaries/$filename").readLines()
 
         fun playGame(gui: GUI) {
-            // Actual Wordle solutions [secret-words.txt] from
-            // https://medium.com/@owenyin/here-lies-wordle-2021-2027-full-answer-list-52017ee99e86
-            val words = readWordsFromFile("secret-words.txt")
-            val randomWord = words.random()
+            val randomWord = secretWords.random()
             val game = WordleGame(randomWord)
 
             for (turn in 0.until(MAX_TURNS)) {
                 val guess = gui.readGuess()
-                try {
-                    val matchString = game.receiveGuess(guess)
-                    gui.showFeedback(guess, matchString)
-                    if (game.wordFound) {
-                        gui.showWin(game.numGuesses)
-                        return
-                    }
-                } catch (error: java.lang.IllegalArgumentException) {
-                    gui.showError(error.message ?: "Error!")
+                val matchString = game.receiveGuess(guess)
+                gui.showFeedback(guess, matchString)
+                if (game.wordFound) {
+                    gui.showWin(game.numGuesses)
+                    return
                 }
             }
             gui.showLoss(randomWord)
