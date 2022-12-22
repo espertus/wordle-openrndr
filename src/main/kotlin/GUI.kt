@@ -4,7 +4,6 @@ import org.openrndr.panel.controlManager
 import org.openrndr.panel.elements.*
 import org.openrndr.panel.style.*
 import java.lang.Thread.sleep
-import java.lang.Thread.yield
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
@@ -47,10 +46,10 @@ enum class KeyState(val color: Color.RGBa) {
 }
 
 object GUI {
-    lateinit var game: WordleGame
-    var turn = 0
-    val input = StringBuilder(WORD_LENGTH)
-    var wordEntered = false // has a guess been entered?
+    private lateinit var game: WordleGame
+    private var turn = 0
+    private val input = StringBuilder(WORD_LENGTH)
+    private var wordEntered = false // has a guess been entered?
     val gameOver
         get() = game.isOver
 
@@ -204,11 +203,13 @@ object GUI {
                 KeyState.Right -> {
                     keyStates[s] = newState
                 }
+
                 KeyState.Mispositioned, KeyState.Unused -> {
                     if (oldState == KeyState.Unknown) {
                         keyStates[s] = newState
                     }
                 }
+
                 else -> throw IllegalStateException("Unexpected state: $newState")
             }
             button.style?.apply {
@@ -271,7 +272,6 @@ fun main() = application {
             styleSheet(has class_ "horizontal") {
                 paddingLeft = 10.px
                 paddingTop = 0.px
-                //background = Color.RGBa(ColorRGBa(1.0, 1.0, 1.0))
 
                 // ----------------------------------------------
                 // The next two lines produce a horizontal layout
@@ -284,7 +284,6 @@ fun main() = application {
             styleSheet(has class_ "grid") {
                 paddingLeft = 10.px
                 paddingTop = 0.px
-                //background = Color.RGBa(ColorRGBa(1.0, 1.0, 1.0))
 
                 // ----------------------------------------------
                 // The next two lines produce a horizontal layout
@@ -359,7 +358,7 @@ fun main() = application {
 
                 val keyboardDivs = keyboardRows.map { row: List<String> ->
                     div("horizontal") {
-                        row.forEachIndexed { i, word ->
+                        row.forEach { word ->
                             button {
                                 label = if (word.isNumber()) "" else word
                                 style = styleSheet {
