@@ -50,7 +50,7 @@ class GUI {
     var wordEntered = false // has a guess been entered?
     var gameOver = false
 
-    lateinit var gridButtonMap: Map<String, Button>
+    lateinit var keyboardButtonMap: Map<String, Button>
     lateinit var grid: List<List<Button>>
     lateinit var announcementElement: Button
     val keyStates: MutableMap<String, KeyState> =
@@ -62,6 +62,45 @@ class GUI {
                     else -> KeyState.Unknown
                 }
             }
+
+    private fun reinitializeProperties() {
+        turn = 0
+        gameOver = false
+        keyStates.clear()
+    }
+
+    private fun resetKeyboard() {
+        keyboardButtonMap.values.forEach { button ->
+            if (button.label.isNotEmpty()) {
+                button.style?.apply {
+                    color = black
+                    background = KeyState.Unknown.color
+                }
+            }
+        }
+    }
+
+    private fun clearGrid() {
+        grid.forEach { row ->
+            row.forEach { button: Button ->
+                button.apply {
+                    label = ""
+                    style?.background = white
+                }.requestRedraw()
+            }
+        }
+    }
+
+    fun startNewGame() {
+        while (!this::grid.isInitialized || !this::keyboardButtonMap.isInitialized) {
+            yield()
+        }
+
+        reinitializeProperties()
+        resetKeyboard()
+        clearGrid()
+        display("", black, 0) // clear announcement area
+    }
 
     private fun display(msg: String, color: Color.RGBa, timeout: Long = 0L) {
         announcementElement.apply {
@@ -127,7 +166,7 @@ class GUI {
     private fun update(s: String, newState: KeyState) {
         val oldState = keyStates.getValue(s)
         if (newState != oldState) {
-            val button = gridButtonMap[s]
+            val button = keyboardButtonMap[s]
                 ?: throw AssertionError("No entry in buttonMap for '$s'")
             when (newState) {
                 KeyState.Right -> {
@@ -147,7 +186,7 @@ class GUI {
     }
 }
 
-fun main(args: Array<String>) = application {
+fun main() = application {
     configure {
         width = 400
         height = 650
@@ -208,7 +247,10 @@ fun main(args: Array<String>) = application {
                 exitProcess(0)
             }
 
-            if (!gui.gameOver) {
+            if (gui.gameOver) {
+                // Start new game on keypress.
+                gui.startNewGame()
+            } else {
                 when (it.name) {
                     "enter" -> processText(ENTER_LABEL)
                     "backspace" -> processText(BACKSPACE_LABEL)
@@ -346,7 +388,7 @@ fun main(args: Array<String>) = application {
                     val buttons: List<Button> = keyboardDivs.flatMap { div ->
                         div.children.filterIsInstance<Button>()
                     }
-                    gui.gridButtonMap =
+                    gui.keyboardButtonMap =
                         buttons.associateBy { button -> button.label }
                 }
             }
@@ -362,7 +404,7 @@ fun main(args: Array<String>) = application {
         try {
             thread(start = true) {
                 gui = GUI()
-                WordleGame.playGame(gui)
+                WordleGame.play(gui)
             }
         } catch (e: IllegalArgumentException) {
             System.err.println(e.message ?: e.toString())

@@ -78,8 +78,9 @@ class WordleGame(private val secretWord: String) {
         private fun readWordsFromFile(filename: String): List<String> =
             File("data/dictionaries/$filename").readLines()
 
-        fun playGame(gui: GUI) {
+        private fun playGame(gui: GUI) {
             val randomWord = secretWords.random()
+            println(randomWord)
             val game = WordleGame(randomWord)
 
             for (turn in 0.until(MAX_TURNS)) {
@@ -92,6 +93,12 @@ class WordleGame(private val secretWord: String) {
                 }
             }
             gui.showLoss(randomWord)
+        }
+
+        fun play(gui: GUI) {
+            while (true) {
+                playGame(gui)
+            }
         }
     }
 }
