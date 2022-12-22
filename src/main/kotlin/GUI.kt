@@ -231,18 +231,7 @@ fun main() = application {
         val keyboardRows = listOf(
             listOf("5") + "QWERTYUIOP".splitChars(),
             listOf("20") + "ASDFGHJKL".splitChars(),
-            listOf(
-                "5",
-                ENTER_LABEL,
-                "Z",
-                "X",
-                "C",
-                "V",
-                "B",
-                "N",
-                "M",
-                BACKSPACE_LABEL
-            )
+            listOf("5", ENTER_LABEL) + "ZXCVBNM".splitChars() + BACKSPACE_LABEL
         )
 
         keyboard.keyDown.listen {
