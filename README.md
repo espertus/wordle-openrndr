@@ -1,25 +1,40 @@
-# OPENRNDR template project
+# Wordle
 
-A feature rich template for creating OPENRNDR programs based on Gradle/Kts
+This is a clone of Wordle using [OPENRNDR](https://openrndr.org/).
 
-The template consists of a configuration for Gradle and an example OPENRNDR program. The Gradle configuration should serve as the
-go-to starting point for writing OPENRNDR-based software.
+## Game Instructions
 
-If you are looking at this from IntelliJ IDEA you can start by expanding the _project_ tab on the left. You will find a template program in `src/main/kotlin/TemplateProgram.kt`
+Play is similar to the original Wordle, except:
 
-You will find some [basic instructions](https://guide.openrndr.org/setUpYourFirstProgram.html) in the [OPENRNDR guide](https://guide.openrndr.org)
+* You can exit the game by pressing the escape key.
+* Once the game ends, you can start a new one by pressing any key besides escape.
 
-## Gradle tasks
- - `run` runs the TemplateProgram
- - `jar` creates an executable platform specific jar file with all dependencies
+## Build instructions
+### Gradle tasks
+ - `run` runs the game
+ - `jar` creates an executable platform-specific jar file with all dependencies
  - `zipDistribution` creates a zip file containing the application jar and the data folder
  - `jpackageZip` creates a zip with a stand-alone executable for the current platform (works with Java 14 only)
 
-## Cross builds
+### Cross builds
 To create runnable jars for a platform different from the platform you use to build one uses `./gradlew jar --PtargetPlatform=<platform>`. The supported platforms are `windows`, `macos`, `linux-x64` and `linux-arm64`. 
 
-## Github Actions
+## Credits
 
-This repository contains a number of Github Actions in `./github/workflows`. 
-The actions enable a basic build run on commit, plus publication actions that are executed when
-a commit is tagged with a version number like `v0.*` or `v1.*`.
+This is based on the [OPENRNDR template project](https://github.com/openrndr/openrndr-template)
+and relies on [orx-gui](https://github.com/openrndr/orx/tree/master/orx-jvm/orx-gui).
+
+I received help from kind and generous people on the OPENRNDR Slack server,
+especially [aBe](https://hamoid.com/).
+
+The source of [secret-words.txt](data/dictionaries/secret-words.txt) is
+[Here Lies Wordle: Full Answer List (NYT Update)](https://medium.com/@owenyin/here-lies-wordle-2021-2027-full-answer-list-52017ee99e86) 
+by Owen Yin.
+
+The source of [legal-words.txt](data/dictionaries/legal-words.txt) was
+[https://raw.githubusercontent.com/tabatkins/wordle-list/main/words](https://raw.githubusercontent.com/tabatkins/wordle-list/main/words),
+maintained by [Tab Atkins Jr.](https://xanthir.com/)
+
+## Contributions
+
+I welcome pull requests for more experienced OPENRNDR programmers.
