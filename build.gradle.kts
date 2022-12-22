@@ -6,70 +6,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 group = "org.openrndr.template"
 version = "0.4.0"
 
-val applicationMainClass = "TemplateProgramKt"
+val applicationMainClass = "GUIKt"
 
 /**  ## additional ORX features to be added to this project */
 val orxFeatures = setOf<String>(
-//  "orx-boofcv",
-//  "orx-camera",
-//  "orx-chataigne",
-    "orx-color",
-    "orx-compositor",
-//  "orx-dnk3",
-//  "orx-easing",
-//  "orx-file-watcher",
-//  "orx-filter-extension",
-    "orx-fx",
-//  "orx-glslify",
-//  "orx-gradient-descent",
-    "orx-git-archiver",
     "orx-gui",
-    "orx-image-fit",
-//  "orx-integral-image",
-//  "orx-interval-tree",
-//  "orx-jumpflood",
-//  "orx-kdtree",
-//  "orx-keyframer",      
-//  "orx-kinect-v1",
-//  "orx-kotlin-parser",
-//  "orx-mesh-generators",
-//  "orx-midi",
-//  "orx-minim",
-//  "orx-no-clear",
-    "orx-noise",
-//  "orx-obj-loader",
-    "orx-olive",
-//  "orx-osc",
-//  "orx-palette",
     "orx-panel",
-//  "orx-parameters",
-//  "orx-poisson-fill",
-//  "orx-rabbit-control",
-//  "orx-realsense2",
-//  "orx-runway",
-    "orx-shade-styles",
-//  "orx-shader-phrases",
-    "orx-shapes",
-//  "orx-syphon",
-//  "orx-temporal-blur",
-//  "orx-tensorflow",    
-//  "orx-time-operators",
-//  "orx-timer",
-//  "orx-triangulation",
-//  "orx-video-profiles",
-)
-
-/** ## additional ORML features to be added to this project */
-val ormlFeatures = setOf<String>(
-//    "orml-blazepose",
-//    "orml-dbface",
-//    "orml-facemesh",
-//    "orml-image-classifier",
-//    "orml-psenet",
-//    "orml-ssd",
-//    "orml-style-transfer",
-//    "orml-super-resolution",
-//    "orml-u2net",
 )
 
 /** ## additional OPENRNDR features to be added to this project */
@@ -98,11 +40,6 @@ repositories {
 }
 
 dependencies {
-
-//    implementation(libs.jsoup)
-//    implementation(libs.gson)
-//    implementation(libs.csv)
-
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.slf4j.api)
     implementation(libs.kotlin.logging)
@@ -197,7 +134,15 @@ runtime {
             jvmArgs.add("-Duser.dir=${"$"}APPDIR/../Resources")
         }
     }
-    options.set(listOf("--strip-debug", "--compress", "1", "--no-header-files", "--no-man-pages"))
+    options.set(
+        listOf(
+            "--strip-debug",
+            "--compress",
+            "1",
+            "--no-header-files",
+            "--no-man-pages"
+        )
+    )
     modules.set(listOf("jdk.unsupported", "java.management"))
 }
 
@@ -218,7 +163,8 @@ class Openrndr {
     val orxTensorflowBackend = "orx-tensorflow"
 
     val os = if (project.hasProperty("targetPlatform")) {
-        val supportedPlatforms = setOf("windows", "macos", "linux-x64", "linux-arm64")
+        val supportedPlatforms =
+            setOf("windows", "macos", "linux-x64", "linux-arm64")
         val platform: String = project.property("targetPlatform") as String
         if (platform !in supportedPlatforms) {
             throw IllegalArgumentException("target platform not supported: $platform")
@@ -227,11 +173,13 @@ class Openrndr {
         }
     } else when (OperatingSystem.current()) {
         OperatingSystem.WINDOWS -> "windows"
-        OperatingSystem.MAC_OS -> when (val h = DefaultNativePlatform("current").architecture.name) {
+        OperatingSystem.MAC_OS -> when (val h =
+            DefaultNativePlatform("current").architecture.name) {
             "aarch64", "arm-v8" -> "macos-arm64"
             else -> "macos"
         }
-        OperatingSystem.LINUX -> when (val h = DefaultNativePlatform("current").architecture.name) {
+        OperatingSystem.LINUX -> when (val h =
+            DefaultNativePlatform("current").architecture.name) {
             "x86-64" -> "linux-x64"
             "aarch64" -> "linux-arm64"
             else -> throw IllegalArgumentException("architecture not supported: $h")
@@ -241,13 +189,23 @@ class Openrndr {
 
     fun orx(module: String) = "org.openrndr.extra:$module:$orxVersion"
     fun orml(module: String) = "org.openrndr.orml:$module:$ormlVersion"
-    fun openrndr(module: String) = "org.openrndr:openrndr-$module:$openrndrVersion"
-    fun openrndrNatives(module: String) = "org.openrndr:openrndr-$module-natives-$os:$openrndrVersion"
-    fun orxNatives(module: String) = "org.openrndr.extra:$module-natives-$os:$orxVersion"
+    fun openrndr(module: String) =
+        "org.openrndr:openrndr-$module:$openrndrVersion"
+
+    fun openrndrNatives(module: String) =
+        "org.openrndr:openrndr-$module-natives-$os:$openrndrVersion"
+
+    fun orxNatives(module: String) =
+        "org.openrndr.extra:$module-natives-$os:$orxVersion"
 
     init {
         repositories {
-            if (listOf(openrndrVersion, orxVersion, ormlVersion).any { "SNAPSHOT" in it }) {
+            if (listOf(
+                    openrndrVersion,
+                    orxVersion,
+                    ormlVersion
+                ).any { "SNAPSHOT" in it }
+            ) {
                 mavenLocal()
             }
             maven(url = "https://maven.openrndr.org")
@@ -269,13 +227,11 @@ class Openrndr {
             for (feature in orxFeatures) {
                 implementation(orx(feature))
             }
-            for (feature in ormlFeatures) {
-                implementation(orml(feature))
-            }
             if ("orx-tensorflow" in orxFeatures) runtimeOnly("org.openrndr.extra:$orxTensorflowBackend-natives-$os:$orxVersion")
             if ("orx-kinect-v1" in orxFeatures) runtimeOnly(orxNatives("orx-kinect-v1"))
             if ("orx-olive" in orxFeatures) implementation(libs.kotlin.script.runtime)
         }
     }
 }
+
 val openrndr = Openrndr()
