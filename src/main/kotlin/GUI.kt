@@ -44,11 +44,13 @@ enum class KeyState(val color: Color.RGBa) {
     Invisible(white)
 }
 
-class GUI {
+object GUI {
+    lateinit var game: WordleGame
     var turn = 0
     val input = StringBuilder(WORD_LENGTH)
     var wordEntered = false // has a guess been entered?
-    var gameOver = false
+    val gameOver
+        get() = game.isOver
 
     lateinit var keyboardButtonMap: Map<String, Button>
     lateinit var grid: List<List<Button>>
@@ -65,7 +67,6 @@ class GUI {
 
     private fun reinitializeProperties() {
         turn = 0
-        gameOver = false
         keyStates.clear()
     }
 
@@ -85,21 +86,23 @@ class GUI {
             row.forEach { button: Button ->
                 button.apply {
                     label = ""
+                    style?.color = black
                     style?.background = white
                 }.requestRedraw()
             }
         }
     }
 
-    fun startNewGame() {
-        while (!this::grid.isInitialized || !this::keyboardButtonMap.isInitialized) {
-            yield()
-        }
+    fun playGame() {
+        game = WordleGame.makeGame()
+    }
 
+    fun startNewGame() {
         reinitializeProperties()
         resetKeyboard()
         clearGrid()
         display("", black, 0) // clear announcement area
+        game = WordleGame.makeGame()
     }
 
     private fun display(msg: String, color: Color.RGBa, timeout: Long = 0L) {
@@ -117,22 +120,43 @@ class GUI {
         }
     }
 
-    fun readGuess(): String {
-        while (true) {
-            while (!wordEntered) {
-                yield() // consider using wait/notify pattern
+    // We need to define legal letters because isLetter() accepts letters
+    // from different alphabets.
+    private val legalLetters: List<Char> = ('A'..'Z').toList()
+
+    fun processText(text: String) {
+        // If a letter was clicked on, add it to the grid.
+        if (text.length == 1 && text[0] in legalLetters) {
+            if (input.length < WORD_LENGTH) {
+                grid[turn][input.length].changeLabel(text)
+                input.append(text)
             }
-            val word = input.toString()
-            wordEntered = false
-            if (WordleGame.isLegalWord(word)) {
-                input.clear()
-                return word
+        } else if (text == ENTER_LABEL) {
+            if (input.length == WORD_LENGTH) {
+                makeGuess()
+            } else {
+                showError("Not enough letters")
             }
+            // Consider displaying an error if enter pressed prematurely.
+        } else if (text == BACKSPACE_LABEL) {
+            if (!wordEntered && input.isNotEmpty()) {
+                grid[turn][input.length - 1].changeLabel("")
+                input.deleteAt(input.length - 1)
+            }
+        }
+    }
+
+    private fun makeGuess() {
+        val guess = input.toString()
+        if (WordleGame.isLegalWord(guess)) {
+            input.clear()
+            showFeedback(guess, game.makeGuess(guess))
+        } else {
             showError("Not in word list")
         }
     }
 
-    fun showFeedback(guess: String, matchString: String) {
+    private fun showFeedback(guess: String, matchString: String) {
         turn++
         for (i in guess.indices) {
             val keyState = matchString[i].toKeyState()
@@ -140,27 +164,33 @@ class GUI {
             // Update the grid.
             val button = grid[turn - 1][i]
             button.label = guess[i].toString() // in case we used AI
-            button.style?.background = keyState.color
-            button.style?.color = white
+            button.style?.apply {
+                background = keyState.color
+                color = white
+            }
             button.requestRedraw()
 
             // Update the map and keyboard.
             update(guess[i].toString(), keyState)
         }
+        if (game.wordFound) {
+            showWin(game.numGuesses)
+        }
+        if (turn >= MAX_TURNS) {
+            showLoss(game.secretWord)
+        }
     }
 
-    fun showError(msg: String) {
+    private fun showError(msg: String) {
         display(msg, red, MESSAGE_TIMEOUT)
     }
 
-    fun showLoss(secretWord: String) {
+    private fun showLoss(secretWord: String) {
         display(secretWord, black)
-        gameOver = true
     }
 
-    fun showWin(numGuesses: Int) {
+    private fun showWin(numGuesses: Int) {
         display(WordleGame.getWinningResponse(numGuesses), black)
-        gameOver = true
     }
 
     private fun update(s: String, newState: KeyState) {
@@ -179,8 +209,10 @@ class GUI {
                 }
                 else -> throw IllegalStateException("Unexpected state: $newState")
             }
-            button.style?.background = keyStates.getValue(s).color
-            button.style?.color = white
+            button.style?.apply {
+                background = keyStates.getValue(s).color
+                color = white
+            }
             button.requestRedraw()
         }
     }
@@ -191,8 +223,6 @@ fun main() = application {
         width = 400
         height = 650
     }
-
-    lateinit var gui: GUI
 
     program {
         val keyboardRows = listOf(
@@ -212,32 +242,6 @@ fun main() = application {
             )
         )
 
-        // We need to define legal letters because isLetter() accepts letters
-        // from different alphabets.
-        val legalLetters: List<Char> = ('A'..'Z').toList()
-
-        fun processText(text: String) {
-            // If a letter was clicked on, add it to the grid.
-            if (text.length == 1 && text[0] in legalLetters) {
-                if (gui.input.length < WORD_LENGTH) {
-                    gui.grid[gui.turn][gui.input.length].changeLabel(text)
-                    gui.input.append(text)
-                }
-            } else if (text == ENTER_LABEL) {
-                if (gui.input.length == WORD_LENGTH) {
-                    gui.wordEntered = true
-                } else {
-                    gui.showError("Not enough letters")
-                }
-                // Consider displaying an error if enter pressed prematurely.
-            } else if (text == BACKSPACE_LABEL) {
-                if (!gui.wordEntered && gui.input.isNotEmpty()) {
-                    gui.grid[gui.turn][gui.input.length - 1].changeLabel("")
-                    gui.input.deleteAt(gui.input.length - 1)
-                }
-            }
-        }
-
         keyboard.keyDown.listen {
             // A motion to adjourn is always in order.
             if (it.name == "escape") {
@@ -247,14 +251,14 @@ fun main() = application {
                 exitProcess(0)
             }
 
-            if (gui.gameOver) {
+            if (GUI.gameOver) {
                 // Start new game on keypress.
-                gui.startNewGame()
+                GUI.startNewGame()
             } else {
                 when (it.name) {
-                    "enter" -> processText(ENTER_LABEL)
-                    "backspace" -> processText(BACKSPACE_LABEL)
-                    else -> if (it.name.length == 1) processText(it.name[0].uppercase()) else System.err.println(
+                    "enter" -> GUI.processText(ENTER_LABEL)
+                    "backspace" -> GUI.processText(BACKSPACE_LABEL)
+                    else -> if (it.name.length == 1) GUI.processText(it.name[0].uppercase()) else System.err.println(
                         "Can't handle ${it.name}"
                     )
                 }
@@ -359,7 +363,7 @@ fun main() = application {
                                 style = styleSheet {
                                     color = Color.RGBa(ColorRGBa.BLACK)
                                     background =
-                                        gui.keyStates.getValue(word).color
+                                        GUI.keyStates.getValue(word).color
                                     width =
                                         if (word.isNumber()) word.toInt().px else
                                             when (word.length) {
@@ -371,8 +375,8 @@ fun main() = application {
                                 }
 
                                 events.clicked.listen {
-                                    if (!gui.gameOver) {
-                                        processText(it.source.label)
+                                    if (!GUI.gameOver) {
+                                        GUI.processText(it.source.label)
                                     }
                                 }
                             }
@@ -380,15 +384,15 @@ fun main() = application {
                     }
                 }
                 run {
-                    gui.announcementElement = topArea.children[0] as Button
-                    gui.grid = gridDivs.map { gridDiv: Div ->
+                    GUI.announcementElement = topArea.children[0] as Button
+                    GUI.grid = gridDivs.map { gridDiv: Div ->
                         gridDiv.children.filterIsInstance<Button>()
                             .filter { it.label.isEmpty() }
                     }
                     val buttons: List<Button> = keyboardDivs.flatMap { div ->
                         div.children.filterIsInstance<Button>()
                     }
-                    gui.keyboardButtonMap =
+                    GUI.keyboardButtonMap =
                         buttons.associateBy { button -> button.label }
                 }
             }
@@ -401,14 +405,6 @@ fun main() = application {
     }
 
     run {
-        try {
-            thread(start = true) {
-                gui = GUI()
-                WordleGame.play(gui)
-            }
-        } catch (e: IllegalArgumentException) {
-            System.err.println(e.message ?: e.toString())
-            exitProcess(1)
-        }
+        GUI.playGame()
     }
 }

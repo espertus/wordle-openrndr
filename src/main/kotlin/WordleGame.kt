@@ -1,11 +1,9 @@
 import java.io.File
-import java.lang.Integer.max
-import java.lang.Math.min
 
 const val WORD_LENGTH = 5
 const val MAX_TURNS = 6
 
-class WordleGame(private val secretWord: String) {
+class WordleGame(val secretWord: String) {
     private val guesses = mutableListOf<String>()
     val numGuesses
         get() = guesses.size
@@ -26,7 +24,7 @@ class WordleGame(private val secretWord: String) {
      * from the length of [secretWord] or if [guess] contains any characters that
      * are not upper-case English letters.
      */
-    fun receiveGuess(guess: String): String {
+    fun makeGuess(guess: String): String {
         require(guess.length == secretWord.length) {
             "Your guess was not $WORD_LENGTH letters long."
         }
@@ -67,38 +65,17 @@ class WordleGame(private val secretWord: String) {
 
         // Actual Wordle solutions [secret-words.txt] from
         // https://medium.com/@owenyin/here-lies-wordle-2021-2027-full-answer-list-52017ee99e86
-        private val secretWords = readWordsFromFile("secret-words.txt")
+        val secretWords = readWordsFromFile("secret-words.txt")
         private val legalWords = readWordsFromFile("legal-words.txt")
 
         fun isLegalWord(word: String) = legalWords.contains(word)
 
         fun getWinningResponse(numGuesses: Int) =
-            WINNING_RESPONSES[min(MAX_TURNS, numGuesses) - 1]
+            WINNING_RESPONSES[MAX_TURNS.coerceAtMost(numGuesses) - 1]
 
         private fun readWordsFromFile(filename: String): List<String> =
             File("data/dictionaries/$filename").readLines()
 
-        private fun playGame(gui: GUI) {
-            val randomWord = secretWords.random()
-            println(randomWord)
-            val game = WordleGame(randomWord)
-
-            for (turn in 0.until(MAX_TURNS)) {
-                val guess = gui.readGuess()
-                val matchString = game.receiveGuess(guess)
-                gui.showFeedback(guess, matchString)
-                if (game.wordFound) {
-                    gui.showWin(game.numGuesses)
-                    return
-                }
-            }
-            gui.showLoss(randomWord)
-        }
-
-        fun play(gui: GUI) {
-            while (true) {
-                playGame(gui)
-            }
-        }
+        fun makeGame() = WordleGame(secretWords.random())
     }
 }
