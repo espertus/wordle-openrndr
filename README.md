@@ -43,7 +43,7 @@ The source of [secret-words.txt](data/dictionaries/secret-words.txt) is
 [Here Lies Wordle: Full Answer List (NYT Update)](https://medium.com/@owenyin/here-lies-wordle-2021-2027-full-answer-list-52017ee99e86)
 by Owen Yin.
 
-The source of [legal-words.txt](data/dictionaries/legal-words.txt) was
+The source of [legal-words.txt](data/dictionaries/legal-words.txt) is
 [https://raw.githubusercontent.com/tabatkins/wordle-list/main/words](https://raw.githubusercontent.com/tabatkins/wordle-list/main/words)
 ,
 maintained by [Tab Atkins Jr.](https://xanthir.com/)
