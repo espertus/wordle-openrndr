@@ -1,10 +1,12 @@
+import org.openrndr.KEY_BACKSPACE
+import org.openrndr.KEY_ENTER
+import org.openrndr.KEY_ESCAPE
 import org.openrndr.application
 import org.openrndr.color.ColorRGBa
 import org.openrndr.panel.controlManager
 import org.openrndr.panel.elements.*
 import org.openrndr.panel.style.*
 import java.lang.Thread.sleep
-import java.lang.Thread.yield
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
@@ -27,28 +29,30 @@ private fun Char.toKeyState() =
         else -> throw AssertionError("Unreachable code reached with: $this")
     }
 
-private val lightGray = Color.RGBa(ColorRGBa(.827, .839, .855))
-private val darkGray = Color.RGBa(ColorRGBa(.471, .486, .494))
-private val yellow = Color.RGBa(ColorRGBa(.788, .706, .345))
-private val green = Color.RGBa(ColorRGBa(.416, .667, .392))
-private val red = Color.RGBa(ColorRGBa.RED)
-private val white = Color.RGBa(ColorRGBa.WHITE)
-private val black = Color.RGBa(ColorRGBa.BLACK)
+private object Palette {
+    val lightGray = Color.RGBa(ColorRGBa(.827, .839, .855))
+    val darkGray = Color.RGBa(ColorRGBa(.471, .486, .494))
+    val yellow = Color.RGBa(ColorRGBa(.788, .706, .345))
+    val green = Color.RGBa(ColorRGBa(.416, .667, .392))
+    val red = Color.RGBa(ColorRGBa.RED)
+    val white = Color.RGBa(ColorRGBa.WHITE)
+    val black = Color.RGBa(ColorRGBa.BLACK)
+}
 
 enum class KeyState(val color: Color.RGBa) {
-    Special(lightGray),
-    Unknown(lightGray),
-    Unused(darkGray),
-    Mispositioned(yellow),
-    Right(green),
-    Invisible(white)
+    Special(Palette.lightGray),
+    Unknown(Palette.lightGray),
+    Unused(Palette.darkGray),
+    Mispositioned(Palette.yellow),
+    Right(Palette.green),
+    Invisible(Palette.white)
 }
 
 object GUI {
-    lateinit var game: WordleGame
-    var turn = 0
-    val input = StringBuilder(WORD_LENGTH)
-    var wordEntered = false // has a guess been entered?
+    private lateinit var game: WordleGame
+    private var turn = 0
+    private val input = StringBuilder(WORD_LENGTH)
+    private var wordEntered = false // has a guess been entered?
     val gameOver
         get() = game.isOver
 
@@ -74,7 +78,7 @@ object GUI {
         keyboardButtonMap.values.forEach { button ->
             if (button.label.isNotEmpty()) {
                 button.style?.apply {
-                    color = black
+                    color = Palette.black
                     background = KeyState.Unknown.color
                 }
             }
@@ -86,8 +90,8 @@ object GUI {
             row.forEach { button: Button ->
                 button.apply {
                     label = ""
-                    style?.color = black
-                    style?.background = white
+                    style?.color = Palette.black
+                    style?.background = Palette.white
                 }.requestRedraw()
             }
         }
@@ -101,7 +105,7 @@ object GUI {
         reinitializeProperties()
         resetKeyboard()
         clearGrid()
-        display("", black, 0) // clear announcement area
+        display("", Palette.black, 0) // clear announcement area
         game = WordleGame.makeGame()
     }
 
@@ -166,7 +170,7 @@ object GUI {
             button.label = guess[i].toString() // in case we used AI
             button.style?.apply {
                 background = keyState.color
-                color = white
+                color = Palette.white
             }
             button.requestRedraw()
 
@@ -182,15 +186,15 @@ object GUI {
     }
 
     private fun showError(msg: String) {
-        display(msg, red, MESSAGE_TIMEOUT)
+        display(msg, Palette.red, MESSAGE_TIMEOUT)
     }
 
     private fun showLoss(secretWord: String) {
-        display(secretWord, black)
+        display(secretWord, Palette.black)
     }
 
     private fun showWin(numGuesses: Int) {
-        display(WordleGame.getWinningResponse(numGuesses), black)
+        display(WordleGame.getWinningResponse(numGuesses), Palette.black)
     }
 
     private fun update(s: String, newState: KeyState) {
@@ -202,16 +206,18 @@ object GUI {
                 KeyState.Right -> {
                     keyStates[s] = newState
                 }
+
                 KeyState.Mispositioned, KeyState.Unused -> {
                     if (oldState == KeyState.Unknown) {
                         keyStates[s] = newState
                     }
                 }
+
                 else -> throw IllegalStateException("Unexpected state: $newState")
             }
             button.style?.apply {
                 background = keyStates.getValue(s).color
-                color = white
+                color = Palette.white
             }
             button.requestRedraw()
         }
@@ -228,23 +234,12 @@ fun main() = application {
         val keyboardRows = listOf(
             listOf("5") + "QWERTYUIOP".splitChars(),
             listOf("20") + "ASDFGHJKL".splitChars(),
-            listOf(
-                "5",
-                ENTER_LABEL,
-                "Z",
-                "X",
-                "C",
-                "V",
-                "B",
-                "N",
-                "M",
-                BACKSPACE_LABEL
-            )
+            listOf("5", ENTER_LABEL) + "ZXCVBNM".splitChars() + BACKSPACE_LABEL
         )
 
         keyboard.keyDown.listen {
             // A motion to adjourn is always in order.
-            if (it.name == "escape") {
+            if (it.key == KEY_ESCAPE) {
                 // This *should* exit the program gracefully but doesn't always work.
                 program.application.exit()
                 // This will definitely end the program.
@@ -255,12 +250,13 @@ fun main() = application {
                 // Start new game on keypress.
                 GUI.startNewGame()
             } else {
-                when (it.name) {
-                    "enter" -> GUI.processText(ENTER_LABEL)
-                    "backspace" -> GUI.processText(BACKSPACE_LABEL)
-                    else -> if (it.name.length == 1) GUI.processText(it.name[0].uppercase()) else System.err.println(
-                        "Can't handle ${it.name}"
-                    )
+                when (it.key) {
+                    KEY_ENTER -> GUI.processText(ENTER_LABEL)
+                    KEY_BACKSPACE -> GUI.processText(BACKSPACE_LABEL)
+                    else -> if (it.name.length == 1)
+                        GUI.processText(it.name[0].uppercase())
+                    else
+                        System.err.println("Can't handle ${it.name}")
                 }
             }
         }
@@ -269,7 +265,6 @@ fun main() = application {
             styleSheet(has class_ "horizontal") {
                 paddingLeft = 10.px
                 paddingTop = 0.px
-                //background = Color.RGBa(ColorRGBa(1.0, 1.0, 1.0))
 
                 // ----------------------------------------------
                 // The next two lines produce a horizontal layout
@@ -282,7 +277,6 @@ fun main() = application {
             styleSheet(has class_ "grid") {
                 paddingLeft = 10.px
                 paddingTop = 0.px
-                //background = Color.RGBa(ColorRGBa(1.0, 1.0, 1.0))
 
                 // ----------------------------------------------
                 // The next two lines produce a horizontal layout
@@ -291,15 +285,15 @@ fun main() = application {
                 flexDirection = FlexDirection.Row
                 width = 100.percent
 
-                background = white
-                color = white
+                background = Palette.white
+                color = Palette.white
             }
 
             styleSheet((has type "button").and(has class_ "grid")) {
                 fontSize = 30.px
-                color = black
-                background = white
-                borderColor = darkGray
+                color = Palette.black
+                background = Palette.white
+                borderColor = Palette.darkGray
                 borderWidth = .5.px
                 width = 40.px
                 height = 50.px
@@ -309,13 +303,13 @@ fun main() = application {
                 marginTop = 10.px
                 marginLeft = 7.px
                 marginBottom = 0.px //10.px
-                color = black
+                color = Palette.black
             }
 
             styleSheet((has type "button").and(has class_ "spacer")) {
-                color = white
-                background = white
-                borderColor = white
+                color = Palette.white
+                background = Palette.white
+                borderColor = Palette.white
             }
 
             layout {
@@ -327,7 +321,7 @@ fun main() = application {
                     button {
                         style = styleSheet {
                             fontSize = 20.px
-                            background = white
+                            background = Palette.white
                             width = 100.percent
                             height = 30.px
                         }
@@ -357,7 +351,7 @@ fun main() = application {
 
                 val keyboardDivs = keyboardRows.map { row: List<String> ->
                     div("horizontal") {
-                        row.forEachIndexed { i, word ->
+                        row.forEach { word ->
                             button {
                                 label = if (word.isNumber()) "" else word
                                 style = styleSheet {
@@ -400,7 +394,7 @@ fun main() = application {
         extend(cm)
         extend {
             // Set background color
-            drawer.clear(1.0, 1.0, 1.0, 1.0)
+            drawer.clear(ColorRGBa.WHITE)
         }
     }
 
